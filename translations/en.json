@@ -1,0 +1,42 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "device": "Device",
+                    "id": "B Route ID",
+                    "password": "Password"
+                },
+                "data_description": {
+                    "device": "Device",
+                    "id": "B Route ID",
+                    "password": "Password"
+                }
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "instantaneous_current_r_phase": {
+                "name": "Instantaneous current R phase"
+            },
+            "instantaneous_current_t_phase": {
+                "name": "Instantaneous current T phase"
+            },
+            "instantaneous_power": {
+                "name": "Instantaneous power"
+            },
+            "total_consumption": {
+                "name": "Total consumption"
+            }
+        }
+    }
+}
