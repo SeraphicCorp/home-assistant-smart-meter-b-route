@@ -25,8 +25,8 @@ class BRouteData:
     total_consumption: float
 
 
-
 type BRouteConfigEntry = ConfigEntry[BRouteUpdateCoordinator]
+
 
 class BRouteUpdateCoordinator(DataUpdateCoordinator[BRouteData]):
     """The B Route update coordinator."""
