@@ -1,3 +1,7 @@
+# DEPRECATED: This integration has been merged into Home assistant, please use it from there
+
+[![Add to Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=route_b_smart_meter)
+
 The Smart Meter B Route integration allows you to access the data of your smart meter using the B Route protocol.
 
 ## Overview
