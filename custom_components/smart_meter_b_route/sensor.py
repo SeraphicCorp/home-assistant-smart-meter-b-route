@@ -22,6 +22,7 @@ from .const import (
     ATTR_API_INSTANTANEOUS_CURRENT_T_PHASE,
     ATTR_API_INSTANTANEOUS_POWER,
     ATTR_API_TOTAL_CONSUMPTION,
+    ATTR_API_TOTAL_EXPORTED,
     DOMAIN,
 )
 from .coordinator import BRouteData, BRouteUpdateCoordinator
@@ -67,6 +68,14 @@ SENSOR_DESCRIPTIONS = (
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         value_accessor=lambda data: data.total_consumption,
     ),
+    SensorEntityDescriptionWithValueAccessor(
+        key=ATTR_API_TOTAL_EXPORTED,
+        translation_key=ATTR_API_TOTAL_EXPORTED,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        value_accessor=lambda data: data.total_exported,
+    ),
 )
 
 
@@ -100,7 +109,7 @@ class SmartMeterBRouteSensor(CoordinatorEntity[BRouteUpdateCoordinator], SensorE
         self._attr_unique_id = f"{coordinator.bid}_{description.key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.bid)},
-            name=f"Smart Meter B Route {coordinator.bid}",
+            name=f"Route B Smart Meter {coordinator.bid}",
         )
 
     @property

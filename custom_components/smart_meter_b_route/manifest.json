@@ -1,7 +1,7 @@
 {
   "domain": "smart_meter_b_route",
   "name": "Smart Meter B Route",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "codeowners": [
     "@SeraphicRav"
   ],
@@ -9,7 +9,7 @@
   "dependencies": [
     "usb"
   ],
-  "documentation": "https://github.com/SeraphicCorp/home-assistant-smart-meter-b-route/blob/main/README.md",
+  "documentation": "https://www.home-assistant.io/integrations/route_b_smart_meter",
   "issue_tracker": "https://github.com/SeraphicCorp/home-assistant-smart-meter-b-route/issues",
   "integration_type": "device",
   "iot_class": "local_polling",
@@ -21,6 +21,6 @@
   "quality_scale": "bronze",
   "requirements": [
     "pyserial==3.5",
-    "momonga==0.1.4"
+    "momonga==0.2.0"
   ]
 }

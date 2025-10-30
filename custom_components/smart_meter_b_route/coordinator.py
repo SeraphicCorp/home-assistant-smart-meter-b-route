@@ -23,6 +23,7 @@ class BRouteData:
     instantaneous_current_t_phase: float
     instantaneous_power: float
     total_consumption: float
+    total_exported: float
 
 
 type BRouteConfigEntry = ConfigEntry[BRouteUpdateCoordinator]
@@ -65,6 +66,7 @@ class BRouteUpdateCoordinator(DataUpdateCoordinator[BRouteData]):
             instantaneous_current_t_phase=current["t phase current"],
             instantaneous_power=self.api.get_instantaneous_power(),
             total_consumption=self.api.get_measured_cumulative_energy(),
+            total_exported=self.api.get_measured_cumulative_energy(reverse=True),
         )
 
     async def _async_update_data(self) -> BRouteData:
