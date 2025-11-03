@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 import logging
 
-from momonga import Momonga, MomongaError
+from momonga import Momonga, MomongaError, MomongaResponseNotPossible
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE, CONF_ID, CONF_PASSWORD
@@ -61,12 +61,16 @@ class BRouteUpdateCoordinator(DataUpdateCoordinator[BRouteData]):
     def _get_data(self) -> BRouteData:
         """Get the data from API."""
         current = self.api.get_instantaneous_current()
+        try:
+            total_exported = self.api.get_measured_cumulative_energy(reverse=True)
+        except MomongaResponseNotPossible:
+            total_exported = 0.0
         return BRouteData(
             instantaneous_current_r_phase=current["r phase current"],
             instantaneous_current_t_phase=current["t phase current"],
             instantaneous_power=self.api.get_instantaneous_power(),
             total_consumption=self.api.get_measured_cumulative_energy(),
-            total_exported=self.api.get_measured_cumulative_energy(reverse=True),
+            total_exported=total_exported,
         )
 
     async def _async_update_data(self) -> BRouteData:
