@@ -2,15 +2,23 @@
 
 from dataclasses import dataclass
 import logging
+import time
+from typing import override
 
-from momonga import Momonga, MomongaError, MomongaResponseNotPossible
+from momonga import Momonga, MomongaError
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE, CONF_ID, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    CONF_SUPPORTS_TOTAL_EXPORTED,
+    CONNECT_RETRIES,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    REOPEN_DELAYS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,18 +27,29 @@ _LOGGER = logging.getLogger(__name__)
 class BRouteData:
     """Class for data of the B Route."""
 
-    instantaneous_current_r_phase: float
-    instantaneous_current_t_phase: float
-    instantaneous_power: float
-    total_consumption: float
-    total_exported: float
+    instantaneous_current_r_phase: float | None
+    instantaneous_current_t_phase: float | None
+    instantaneous_power: float | None
+    total_consumption: float | None
+    total_exported: float | None
 
 
 type BRouteConfigEntry = ConfigEntry[BRouteUpdateCoordinator]
 
 
+@dataclass
+class BRouteDeviceInfo:
+    """Static device information fetched once at setup."""
+
+    serial_number: str | None = None
+    manufacturer_code: str | None = None
+    echonet_version: str | None = None
+
+
 class BRouteUpdateCoordinator(DataUpdateCoordinator[BRouteData]):
     """The B Route update coordinator."""
+
+    device_info_data: BRouteDeviceInfo
 
     def __init__(
         self,
@@ -41,9 +60,17 @@ class BRouteUpdateCoordinator(DataUpdateCoordinator[BRouteData]):
 
         self.device = entry.data[CONF_DEVICE]
         self.bid = entry.data[CONF_ID]
-        password = entry.data[CONF_PASSWORD]
+        self._password = entry.data[CONF_PASSWORD]
+        self.supports_total_exported = entry.data[CONF_SUPPORTS_TOTAL_EXPORTED]
 
-        self.api = Momonga(dev=self.device, rbid=self.bid, pwd=password)
+        self.api = Momonga(
+            dev=self.device,
+            rbid=self.bid,
+            pwd=self._password,
+            reopen_delays=REOPEN_DELAYS,
+            scan_retries=CONNECT_RETRIES,
+            join_retries=CONNECT_RETRIES,
+        )
 
         super().__init__(
             hass,
@@ -53,18 +80,47 @@ class BRouteUpdateCoordinator(DataUpdateCoordinator[BRouteData]):
             update_interval=DEFAULT_SCAN_INTERVAL,
         )
 
+        self.device_info_data = BRouteDeviceInfo()
+
+    @override
     async def _async_setup(self) -> None:
-        await self.hass.async_add_executor_job(
-            self.api.open,
-        )
+        def fetch() -> None:
+            self.api.open()
+            self._fetch_device_info()
+
+        await self.hass.async_add_executor_job(fetch)
+
+    def _fetch_device_info(self) -> None:
+        """Fetch static device information from the smart meter."""
+        try:
+            self.device_info_data.serial_number = self.api.get_serial_number()
+        except MomongaError:
+            _LOGGER.debug("Failed to fetch serial number", exc_info=True)
+
+        time.sleep(self.api.internal_xmit_interval)
+        try:
+            raw = self.api.get_manufacturer_code()
+            self.device_info_data.manufacturer_code = raw.hex().upper()
+        except MomongaError:
+            _LOGGER.debug("Failed to fetch manufacturer code", exc_info=True)
+
+        time.sleep(self.api.internal_xmit_interval)
+        try:
+            self.device_info_data.echonet_version = self.api.get_standard_version()
+        except MomongaError:
+            _LOGGER.debug("Failed to fetch ECHONET Lite version", exc_info=True)
 
     def _get_data(self) -> BRouteData:
         """Get the data from API."""
+        if not self.api.is_open:
+            # The session is left closed when momonga gives up recovering it
+            self.api.reopen()
         current = self.api.get_instantaneous_current()
-        try:
-            total_exported = self.api.get_measured_cumulative_energy(reverse=True)
-        except MomongaResponseNotPossible:
-            total_exported = 0.0
+        total_exported = (
+            self.api.get_measured_cumulative_energy(reverse=True)
+            if self.supports_total_exported
+            else 0.0
+        )
         return BRouteData(
             instantaneous_current_r_phase=current["r phase current"],
             instantaneous_current_t_phase=current["t phase current"],
@@ -73,6 +129,7 @@ class BRouteUpdateCoordinator(DataUpdateCoordinator[BRouteData]):
             total_exported=total_exported,
         )
 
+    @override
     async def _async_update_data(self) -> BRouteData:
         """Update data."""
         try:

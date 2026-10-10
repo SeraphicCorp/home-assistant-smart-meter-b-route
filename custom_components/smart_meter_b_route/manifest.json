@@ -1,7 +1,7 @@
 {
   "domain": "smart_meter_b_route",
   "name": "Smart Meter B Route",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "codeowners": [
     "@SeraphicRav"
   ],
@@ -20,7 +20,6 @@
   ],
   "quality_scale": "bronze",
   "requirements": [
-    "pyserial==3.5",
-    "momonga==0.2.0"
+    "momonga==0.7.0"
   ]
 }
